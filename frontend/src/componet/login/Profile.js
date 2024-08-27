@@ -19,19 +19,17 @@ export default function Profile() {
         </div>
         <div className=' row'>
             <div className='bg-primary'>
-                <h1 className=''>
+                <p className=''>
                     Name : {name} 
-                    <h1 className='text-center'>
-
-                    </h1>
-                </h1>
-                <h2>
+                    
+                </p>
+                <p>
                     Email Id : {email}  
-                </h2>
+                </p>
              
-                <h2>
+                <p>
                     Contact :{phone}
-                </h2>
+                </p>
                 
             </div>
            
@@ -44,7 +42,7 @@ export default function Profile() {
 
     
     <button className='container-fluid bg-secondary'>
-    <Link className='nav-link' to='/'><h4>logout</h4></Link>
+    <Link className='nav-link' to='/logout'><h4>logout</h4></Link>
     </button>
     </div>
     

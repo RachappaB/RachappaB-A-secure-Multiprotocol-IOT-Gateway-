@@ -11,6 +11,7 @@ import View1 from './View1';
 import Profile from './Profile';
 import {DataProvider} from './Global'
 import Cloud0 from './Cloud0';
+import Logout from './Logout';
 
 export default function Auth1_main() {
   return (
@@ -21,6 +22,8 @@ export default function Auth1_main() {
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/list' element={<List />} />
+        <Route path='/logout' element={<Logout />} />
+
         <Route path='/create0' element={<Create0 />} />
         <Route path='/create1' element={<Create1 />} />
         <Route path='/create2' element={<Create2 />} />
