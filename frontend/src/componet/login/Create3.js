@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Container, Form, Button, Alert } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 export default class Create3 extends Component {
   constructor(props) {
@@ -100,6 +101,8 @@ export default class Create3 extends Component {
             <Button variant="primary" onClick={this.handleSubmit}>
               Submit
             </Button>
+            <Link className='nav-link' to='/cloud0'><b><Button variant="success" className="mt-4" onClick={this.handleNext}>Next</Button></b></Link>
+
           </div>
         )}
 

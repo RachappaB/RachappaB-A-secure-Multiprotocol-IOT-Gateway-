@@ -8,9 +8,14 @@ import Create1 from './Create1';
 import Create2 from './Create2';
 import Create3 from './Create3';
 import View1 from './View1';
+import Profile from './Profile';
+import {DataProvider} from './Global'
+import Cloud0 from './Cloud0';
 
 export default function Auth1_main() {
   return (
+    <DataProvider>
+
     <BrowserRouter>
       <Navbar />
       <Routes>
@@ -20,11 +25,15 @@ export default function Auth1_main() {
         <Route path='/create1' element={<Create1 />} />
         <Route path='/create2' element={<Create2 />} />
         <Route path='/create3' element={<Create3 />} />
-        
+        <Route path='/profile' element={<Profile />} />
+        <Route path='/cloud0' element={<Cloud0 />} />
+
+
         {/* Handle dynamic project ID */}
         <Route path='/view/:id' element={<View1 />} />
         <Route path='*' element={<h1>Wrong URL Address Page</h1>} />
       </Routes>
     </BrowserRouter>
+    </DataProvider>
   );
 }

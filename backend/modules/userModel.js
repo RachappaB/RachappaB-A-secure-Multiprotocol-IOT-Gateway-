@@ -6,10 +6,6 @@ const userSchema = mongoose.Schema({
         trim:true,
         require:true
     },
-    lastname:{
-        type:String,
-        trim:true
-    },
     phone:{
         type:String,
         trim:true,

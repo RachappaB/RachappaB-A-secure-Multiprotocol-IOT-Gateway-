@@ -4,77 +4,76 @@ const shopowner = require('../modules/shopownerModel')
 const Priest =require('../modules/pristModel')
 var nodemailer = require('nodemailer');
 require('dotenv').config()
-const Razorpay = require('razorpay');
 var crypto = require("crypto");
 const bcrypt = require('bcrypt')
 const jwt =require('jsonwebtoken')
 
 const shopownercontrol ={
-    register:async (req,res)=>{
-        console.log("customer register")
-        try{
-            console.log('post')
-            const {name,lastname,phone,email,password,age,add,zip} = req.body; 
-            console.log(zip)
-            var x =parseInt(zip)
-
-            if (x >= 559999 && x <= 560099)
-            {
-                console.log("zip is valid ")
-            }
-            else{
-                return res.status(500).json({msg:"we don't have service this area"})
-            }
-
-            const user = await Users.findOne({email})
-            if(user)
-                 return res.status(400).json({msg:"THIS EMAIL IS ALREADY EXISTS"})
-            if(password.length <6) 
-                return res.status(400).json({msg:"THIS   PASSWORD IS TOO WEAK"})
+    register: async (req, res) => {
+        console.log("customer register");
+        try {
+            console.log('post');
+            const { email, password, name, phone } = req.body;
+            console.log(email, password);
+            const user = await Users.findOne({ email });
+            if (user)
+                return res.status(400).json({ msg: "THIS EMAIL IS ALREADY EXISTS" });
+            if (password.length < 6)
+                return res.status(400).json({ msg: "THIS PASSWORD IS TOO WEAK" });
+    
+            // Hash the password and save it in the user object
+            const passwordhash = await bcrypt.hash(password, 10);
+            const newuser = new Users({
+                email,
+                password: passwordhash, // Assign the hashed password
+                name,
+                phone
+            });
+    
+            // Save the user to the database
+            await newuser.save();
+    
+            // Create tokens
+            const accesstoken = createAccessToken({ id: newuser._id });
+            const refreshtoken = createRefreshToken({ id: newuser._id });
+    
+            res.cookie('refreshtoken', refreshtoken, {
+                httpOnly: true,
+                path: '/user/refresh_token',
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                secure: process.env.NODE_ENV === 'production', // use HTTPS in production
+                sameSite: 'lax', // CSRF protection
+            });
             
-            const passwordhash = await bcrypt.hash(password,10)
-            const newuser  =await  new Users({
-                name,lastname,phone,email,password:passwordhash,zip,age,add
-            })
-           
-           // save mongodb
-           await newuser.save()
-           // then create jsonwebtoken to auth
-           
-           const accesstoken = createAccessToken({id:newuser._id})
-          //  then create refresh token 
-          const refreshtoken = createRefreshToken({id:newuser._id})
-          res.cookie('refreshtoken',refreshtoken,
-          {
-            httpOnly:true,
-            path:'/user/refresh_token',
-            maxAge:7*24*60*60*1000
-          })
-           res.json({accesstoken})
-        }catch(err)
-        {
-            return res.status(500).json({msg:err.message})
+    
+            res.json({ accesstoken });
+        } catch (err) {
+            return res.status(500).json({ msg: err.message });
         }
-
     },
+    
     login:async (req,res) =>{
-        console.log("login")
+        console.log("customer login")
         try{
             const {email,password} = req.body;
+            console.log(email,password)
             const user = await Users.findOne({email})
             if(!user)       return res.status(400).json({msg:"THIS User don't  EXISTS"});
             const isMatch = await bcrypt.compare(password,user.password)
+            console.log(isMatch)
             if(!isMatch) return res.status(400).json({msg:"Incorrect Password"});
             // if login success, creat access token and refresh token
             const accesstoken = createAccessToken({id:user._id})
             const refreshtoken = createRefreshToken({id:user._id})
-          res.cookie('refreshtoken',refreshtoken,
-          {
-            httpOnly:true,
-            path:'/user/refresh_token',
-            maxAge:7*24*60*60*1000
-
-          })
+            res.cookie('refreshtoken', refreshtoken, {
+                httpOnly: true,
+                path: '/user/refresh_token',
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                secure: process.env.NODE_ENV === 'production', // use HTTPS in production
+                sameSite: 'lax', // CSRF protection
+            });
+            
+          console.log(accesstoken)
             res.json({accesstoken})
         }
         catch(err)
@@ -160,14 +159,14 @@ const shopownercontrol ={
         }
     },
     info:async (req,res)=>{
+        
         console.log("infor")
         try{
          
             console.log(req.user.id)
-
             const user  = await Users.findById({"_id":req.user.id}) 
-            const data  = await Products.find({})        
-            res.json({"user":user,"products":data})
+            res.json({"user":user})
+
         }
         catch(err)
         {
@@ -180,8 +179,8 @@ const shopownercontrol ={
         console.log("all products")
         try{
          
-            const data  = await Products.find({})
-            res.json({"products":data,"pooja":data})
+            // const data  = await Products.find({})
+            res.json();
         }
         catch(err)
         {

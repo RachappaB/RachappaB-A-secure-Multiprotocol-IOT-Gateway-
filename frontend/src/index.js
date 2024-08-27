@@ -18,8 +18,8 @@ if(!firstLogin )
 {
    root.render(
   
-      // <Autho_main/>
-      <Auth1_main/>
+      <Autho_main/>
+      // <Auth1_main/>
 
    );
 }

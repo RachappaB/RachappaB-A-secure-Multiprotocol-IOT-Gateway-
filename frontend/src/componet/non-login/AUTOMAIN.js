@@ -17,7 +17,7 @@ import { BrowserRouter,Routes, Route } from 'react-router-dom';
 
 // import {DataProvider} from './Global'
 
-
+import { DataProvider } from './Global';
 export default function Autho_main() {
   return (
 

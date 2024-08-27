@@ -18,21 +18,32 @@ function SignUP() {
     const [phone,setphone]= useState(0)
     
     const [password,setPassword] = useState('')
-    const handleSubmit = async e => {
-      
-        e.preventDefault()
-        try{
-            await localStorage.clear()
-            const res = await  axios.post('/customer/register',{email,password,name,phone})
-             localStorage.setItem('firstLogin',true)
-             window.location.href ="/"
-
-        }catch(err)
-        {
-            alert(err.response.data.msg)
-        }
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await localStorage.clear();
+            const res = await axios.post('http://localhost:3001/customer/register', {
+                email,
+                password,
+                name,
+                phone
+            });
+            
+            // Check the response data
+            console.log(res.data); // Add this line to see the response in the console
     
+            if (res.data.accesstoken) {
+                localStorage.setItem('firstLogin', true);
+                localStorage.setItem('accessToken', res.data.accesstoken);
+                window.location.href = "/";
+            } else {
+                alert("Registration failed. Please try again.");
+            }
+        } catch (err) {
+            alert(err.response?.data?.msg || "An error occurred during registration.");
+        }
     }
+    
 
 
     return (
