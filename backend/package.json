@@ -14,7 +14,8 @@
     "mongoose": "^6.7.2",
     "nodemailer": "^6.8.0",
     "nodemon": "^2.0.20",
-    "razorpay": "^2.8.4"
+    "razorpay": "^2.8.4",
+    "vm2": "^3.9.19"
   },
   "name": "ab",
   "description": "",
