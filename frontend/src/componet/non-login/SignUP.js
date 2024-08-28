@@ -22,7 +22,7 @@ function SignUP() {
         e.preventDefault();
         try {
             await localStorage.clear();
-            const res = await axios.post('http://localhost:3001/customer/register', {
+            const res = await axios.post('/customer/register', {
                 email,
                 password,
                 name,

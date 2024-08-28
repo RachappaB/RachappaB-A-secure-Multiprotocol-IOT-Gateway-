@@ -22,7 +22,7 @@ export default function View1() {
     // Fetch project data from the server
     const fetchProjectData = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/project/view/${id}`, {
+        const response = await axios.get(`/project/view/${id}`, {
           headers: { Authorization: token },
         });
         setProjectData(response.data);

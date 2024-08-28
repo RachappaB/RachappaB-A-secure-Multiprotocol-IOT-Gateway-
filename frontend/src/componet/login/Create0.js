@@ -52,7 +52,7 @@ export default function Create0() {
     };
 
     try {
-      const response = await axios.post('http://localhost:3001/project/create', projectData,{   headers: {Authorization: token}});
+      const response = await axios.post('/project/create', projectData,{   headers: {Authorization: token}});
       if (response.status === 200) {
         console.log('Project created successfully:', response.data);
         navigate('/list');  // Redirect to the list page or another route

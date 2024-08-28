@@ -5,7 +5,7 @@ export default class Logout extends Component {
     try {
         await localStorage.clear();
 
-      const response = await fetch('http://localhost:3001/user/logout', {
+      const response = await fetch('/user/logout', {
         method: 'GET',
         credentials: 'include', // Include cookies in the request
       });
