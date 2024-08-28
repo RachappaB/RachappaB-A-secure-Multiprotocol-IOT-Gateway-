@@ -25,6 +25,7 @@ mongoose.connect(process.env.MONGODB_URI,  err =>{
 //Router
 app.use('/customer',require('./router/cutomer'))
 app.use('/user',require('./router/userRouter'))
+app.use('/project',require('./router/ProjectRouter'))
 
 
 app.get('/user/refresh_token', (req, res) => {
