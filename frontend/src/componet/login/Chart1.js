@@ -75,7 +75,7 @@ export default function Chart1() {
         type: 'time',
         time: {
           unit: 'day',
-          tooltipFormat: 'll',
+          tooltipFormat: 'MMM d, yyyy', // Use valid date-fns format
         },
         title: {
           display: true,

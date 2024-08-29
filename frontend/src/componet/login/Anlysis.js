@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Container, Form, Button, Row, Col, Card, Alert } from 'react-bootstrap';
+import { Link, useParams } from 'react-router-dom';
 
 export default function Analysis() {
   const [instructions, setInstructions] = useState([{ instruction: '', result: null, error: null, loading: false }]);
+  const { id } = useParams(); // Get the project ID from the URL
+  const [projectId, setProjectId] = useState(id); // Example project ID
 
   const handleRun = async (index) => {
     const newInstructions = [...instructions];

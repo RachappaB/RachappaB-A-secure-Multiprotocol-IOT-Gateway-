@@ -15,6 +15,7 @@ function generateApiUrls(projectId) {
     const baseUrl = 'http://localhost:3001/project';
     return {
         writeUrl: `${baseUrl}/insert/${projectId}`, // Endpoint to insert data
+        limitUlr: `${baseUrl}/table/rows/${projectId}?limit=10&from=top`,
         readUrl: `${baseUrl}/table/${projectId}`   // Endpoint to read data
     };
 }
@@ -86,7 +87,7 @@ router.post('/insert/:projectId', async (req, res) => {
             console.error('Error inserting data:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
-        res.status(200).json({ message: 'Data inserted successfully' });
+        res.status(200).json({ message: 'Data  successfully' });
     });
 });
 

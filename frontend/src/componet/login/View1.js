@@ -46,7 +46,8 @@ export default function View1() {
 
       <div className="d-grid gap-2">
         <Button variant="primary" size="lg">         
-                <Link className='nav-link' to='/Anlysis'><b>Anlysis</b></Link>
+        <Link className='nav-link'  to={`/anlysis/${id}`}>Anlysis page</Link>
+
         </Button>
         <Button variant="primary" size="lg">         
                 <Link className='nav-link' to='/ai'><b>Predication</b></Link>

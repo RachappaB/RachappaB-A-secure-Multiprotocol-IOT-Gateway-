@@ -34,7 +34,7 @@ export default function Auth1_main() {
         <Route path='/profile' element={<Profile />} />
         <Route path='/cloud0' element={<Cloud0 />} />
         <Route path='/ai' element={<AI1 />} />
-        <Route path='/anlysis' element={<Anlysis/>} />
+        <Route path='/anlysis/:projectId' element={<Anlysis />} />
 
         {/* Handle dynamic project ID */}
         <Route path='/view/:id' element={<View1 />} />

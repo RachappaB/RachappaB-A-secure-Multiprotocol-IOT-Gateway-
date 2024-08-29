@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 
 const Create11 = () => {
   const { id } = useParams(); // Get the project ID from the URL
-  const [apiUrls, setApiUrls] = React.useState({ writeUrl: '', readUrl: '' });
+  const [apiUrls, setApiUrls] = React.useState({ writeUrl: '', limitUlr:'',readUrl: '' });
 
   React.useEffect(() => {
     const fetchApiUrls = async () => {
@@ -36,8 +36,8 @@ const Create11 = () => {
         </div>
         <div className="p-3 mb-3 border rounded">
           <h5>REST API Read by limit</h5>
-          <p>{apiUrls.readUrl}</p>
-          <Button variant="outline-primary" onClick={() => handleCopy(apiUrls.readUrl)}>Copy</Button>
+          <p>{apiUrls.limitUlr}</p>
+          <Button variant="outline-primary" onClick={() => handleCopy(apiUrls.limitUlr)}>Copy</Button>
         </div>
 
         <div className="p-3 mb-3 border rounded">
