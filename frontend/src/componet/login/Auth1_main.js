@@ -14,6 +14,7 @@ import Cloud0 from './Cloud0';
 import Logout from './Logout';
 import Anlysis from './Anlysis';
 import AI1 from './AI1';
+import Table1 from './Table1';
 
 export default function Auth1_main() {
   return (
@@ -33,11 +34,12 @@ export default function Auth1_main() {
         <Route path='/profile' element={<Profile />} />
         <Route path='/cloud0' element={<Cloud0 />} />
         <Route path='/ai' element={<AI1 />} />
-
         <Route path='/anlysis' element={<Anlysis/>} />
 
         {/* Handle dynamic project ID */}
         <Route path='/view/:id' element={<View1 />} />
+        <Route path='/table/:projectId' element={<Table1 />} />
+
         <Route path='*' element={<h1>Wrong URL Address Page</h1>} />
       </Routes>
     </BrowserRouter>

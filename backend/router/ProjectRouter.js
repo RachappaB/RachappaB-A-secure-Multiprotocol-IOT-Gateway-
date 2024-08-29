@@ -1,54 +1,69 @@
-const router = require('express').Router()
-const Users = require('../modules/customerModel')
-const usercontrol  = require('../controler/userControl')
-const Project = require('../modules/projectModel')
-const auth =require('../middleware/auth')
-const math = require('mathjs'); // Example for math processing
-const jstat = require('jstat'); // Example for statistical analysis
-router.get('/',function(req,res)
-{
-    res.json({msg:"welcome to create project"})
-})
+const express = require('express');
+const router = express.Router();
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./database.db'); // Adjust the path to your database file
 
+const Users = require('../modules/customerModel');
+const Project = require('../modules/projectModel');
+const auth = require('../middleware/auth');
 
+// Function to create a table
+function createTable(projectId, columnNames) {
+    const tableName = `project_${projectId}`;
+    let columns = columnNames.map(name => `${name} TEXT`).join(', ');
+    columns += ", timestamp DATETIME DEFAULT CURRENT_TIMESTAMP"; // Adding a timestamp column
 
-router.post('/create',auth,async function(req,res){
+    const createTableSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns});`;
+
+    db.run(createTableSQL, (err) => {
+        if (err) {
+            console.error(`Error creating table ${tableName}:`, err.message);
+        } else {
+            console.log(`Table ${tableName} created successfully.`);
+        }
+    });
+}
+
+// Route to create a project and its corresponding table
+router.post('/create', auth, async (req, res) => {
     try {
-        const owner  = await Users.findById({"_id":req.user.id}) 
+        const owner = await Users.findById(req.user.id);
 
-        const {projectName,description,mode,numOfColumns,columnNamesdata} =req.body;
-        const newprojoect = new Project({projectName,description,mode,owner,numOfColumns,columnNamesdata});
-        await newprojoect.save();
-        res.send("ok");
+        const { projectName, description, mode, numOfColumns, columnNamesdata } = req.body;
+        const newProject = new Project({ projectName, description, mode, owner, numOfColumns, columnNames: columnNamesdata });
+        await newProject.save();
 
+        console.log('Project created, initiating table creation...');
+
+        // Create a corresponding SQLite table
+        createTable(newProject._id, columnNamesdata);
+
+        res.status(200).json({ message: 'Project created successfully', projectId: newProject._id });
     } catch (error) {
-        console.log(error)
-        res.send(error)
-        
-    }
-
-})
-
-
-router.get('/list', auth, async function (req, res) {
-    try {
-        // Fetch projects where the logged-in user is the owner
-        const projects = await Project.find({ owner: req.user.id }).select('projectName');
-        res.json({ projects });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: 'Server Error' });
+        console.error('Error creating project:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
+// Route to fetch a list of projects for the authenticated user
+router.get('/list', auth, async (req, res) => {
+    try {
+        console.log("Fetching project list for user:", req.user.id);
 
+        const projects = await Project.find({ owner: req.user.id }).select('projectName');
+        res.json({ projects });
+    } catch (error) {
+        console.error("Error fetching project list:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
 
+// Route to fetch project details by ID
 router.get('/view/:id', auth, async (req, res) => {
     try {
-        console.log("View");
-        const projectId = req.params.id;
+        console.log("Fetching project details for project ID:", req.params.id);
 
-        // Find project by ID
+        const projectId = req.params.id;
         const project = await Project.findById(projectId).populate('owner', 'name email');
 
         if (!project) {
@@ -57,57 +72,64 @@ router.get('/view/:id', auth, async (req, res) => {
 
         res.json(project);
     } catch (error) {
-        console.error('Error fetching project data:', error);
+        console.error("Error fetching project data:", error);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
+// Endpoint to fetch table data
+router.get('/table/:projectId', async (req, res) => {
+    const projectId = req.params.projectId;
+    const tableName = `project_${projectId}`;
 
+    console.log(`Fetching data from table ${tableName}`);
 
-// Analyze endpoint
-router.post('/analyze', async (req, res) => {
-    try {
-        const { instruction } = req.body;
-        console.log("Step 1: Received instruction:", instruction);
+    const query = `SELECT * FROM ${tableName}`;
 
-        let result;
-        const cleanedInstruction = instruction.trim();
-        console.log("Step 2: Cleaned instruction:", cleanedInstruction);
-
-        // Trim spaces around the instruction type
-        const type = cleanedInstruction.split(':')[0].trim();
-        const content = cleanedInstruction.split(':')[1]?.trim();
-
-        if (type === 'math') {
-            try {
-                console.log("Step 3: Math expression to evaluate:", content);
-                result = math.evaluate(content);
-                console.log("Step 4: Math evaluation result:", result);
-            } catch (mathError) {
-                console.error("Math evaluation error:", mathError.message);
-                return res.status(500).json({ message: 'Math evaluation error', error: mathError.message });
-            }
-        } else if (type === 'stats') {
-            try {
-                const numbers = content.replace('mean(', '').replace(')', '').split(',').map(Number);
-                console.log("Step 3: Numbers for mean calculation:", numbers);
-                result = jstat.mean(numbers);
-                console.log("Step 4: Mean calculation result:", result);
-            } catch (statsError) {
-                console.error("Statistical calculation error:", statsError.message);
-                return res.status(500).json({ message: 'Statistical calculation error', error: statsError.message });
-            }
-        }  else {
-            result = 'Unknown instruction';
-            console.log("Step 3: Instruction type unknown, returning:", result);
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.error('Error fetching table data:', err.message);
+            return res.status(500).json({ message: 'Server error' });
         }
-
-        res.json({ result });
-        console.log("Step 5: Response sent with result:", result);
-    } catch (error) {
-        console.error('General error processing the instruction:', error.message);
-        res.status(500).json({ message: 'Error processing the instruction', error: error.message });
-    }
+        console.log('Fetched data:', rows);
+        res.json({ rows });
+    });
 });
 
-module.exports = router
+// Endpoint to fetch table data for chart
+router.get('/chart/:projectId', async (req, res) => {
+    const projectId = req.params.projectId;
+    const tableName = `project_${projectId}`;
+  
+    const query = `SELECT * FROM ${tableName}`;
+    db.all(query, [], (err, rows) => {
+      if (err) {
+        console.error('Error fetching table data:', err.message);
+        return res.status(500).json({ message: 'Server error' });
+      }
+      res.json({ rows });
+    });
+  });
+  
+
+// Endpoint to fetch column names for the table
+router.get('/columns/:projectId', async (req, res) => {
+    const projectId = req.params.projectId;
+    const tableName = `project_${projectId}`;
+
+    console.log(`Fetching column names for table ${tableName}`);
+
+    const query = `PRAGMA table_info(${tableName})`;
+
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.error('Error fetching column names:', err.message);
+            return res.status(500).json({ message: 'Server error' });
+        }
+        const columns = rows.map(row => row.name);
+        console.log('Fetched columns:', columns);
+        res.json({ columns });
+    });
+});
+
+module.exports = router;

@@ -65,6 +65,8 @@ export default function View1() {
       </div>
       {/* Conditionally render Table1 based on showTable state */}
       {showTable && <Table1/>}
+      <Link to={`/table/${id}`}>Table page</Link>
+
       <Create11/>
       <Create2/>
       <Create3/>

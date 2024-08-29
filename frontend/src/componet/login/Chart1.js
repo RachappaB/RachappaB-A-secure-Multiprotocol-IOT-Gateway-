@@ -1,6 +1,9 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement, Title, Tooltip, Legend, TimeScale } from 'chart.js';
+import 'chartjs-adapter-date-fns'; // Import the date adapter
+import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
 // Register Chart.js components
 ChartJS.register(
@@ -10,55 +13,88 @@ ChartJS.register(
   PointElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  TimeScale
 );
 
-export default class Chart1 extends Component {
-  render() {
-    // Sample data - replace with actual data
-    const labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
-    const data = {
-      labels: labels,
-      datasets: [
-        {
-          label: 'Column 1',
-          data: [30, 45, 50, 40, 60, 70, 55],
-          borderColor: 'rgba(75, 192, 192, 1)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+export default function Chart1() {
+  const { id } = useParams(); // Get the project ID from the URL
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const response = await axios.get(`/project/table/${id}`);
+        const rows = response.data.rows;
+
+        if (rows.length === 0) {
+          console.warn('No data found for the chart.');
+          return;
+        }
+
+        // Extract column names
+        const columnNames = Object.keys(rows[0]).filter(column => column !== 'timestamp');
+        const timestamps = rows.map(row => row.timestamp);
+
+        const datasets = columnNames.map((column, index) => ({
+          label: column,
+          data: rows.map(row => ({ x: row.timestamp, y: row[column] })),
+          borderColor: `hsl(${index * 360 / columnNames.length}, 70%, 50%)`,
+          backgroundColor: `hsl(${index * 360 / columnNames.length}, 70%, 90%)`,
           fill: true,
-        },
-        {
-          label: 'Column 2',
-          data: [20, 35, 40, 30, 50, 60, 45],
-          borderColor: 'rgba(255, 99, 132, 1)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          fill: true,
-        },
-        // Add more datasets as needed
-      ],
+        }));
+
+        setChartData({
+          labels: timestamps,
+          datasets: datasets
+        });
+      } catch (error) {
+        console.error('Error fetching chart data:', error);
+      }
     };
 
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        tooltip: {
-          callbacks: {
-            label: function (context) {
-              return `${context.dataset.label}: ${context.parsed.y}`;
-            },
+    fetchChartData();
+  }, [id]);
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            return `${context.dataset.label}: ${context.parsed.y}`;
           },
         },
       },
-    };
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: {
+          unit: 'day',
+          tooltipFormat: 'll',
+        },
+        title: {
+          display: true,
+          text: 'Timestamp',
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Value',
+        },
+      },
+    },
+  };
 
-    return (
-      <div className="mt-5">
-        <h2>Data Line Chart</h2>
-        <Line data={data} options={options} />
-      </div>
-    );
-  }
+  return (
+    <div className="mt-5">
+      <h2>Data Line Chart</h2>
+      <Line data={chartData} options={options} />
+    </div>
+  );
 }
