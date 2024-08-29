@@ -7,6 +7,99 @@ const Users = require('../modules/customerModel');
 const Project = require('../modules/projectModel');
 const auth = require('../middleware/auth');
 
+
+
+// Helper function to generate REST API URLs
+
+function generateApiUrls(projectId) {
+    const baseUrl = 'http://localhost:3001/project';
+    return {
+        writeUrl: `${baseUrl}/insert/${projectId}`, // Endpoint to insert data
+        readUrl: `${baseUrl}/table/${projectId}`   // Endpoint to read data
+    };
+}
+
+
+
+// Route to fetch REST API URLs
+router.get('/api-urls/:projectId', async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        if (!projectId) {
+            return res.status(400).json({ message: 'Project ID is required' });
+        }
+        const urls = generateApiUrls(projectId);
+        res.json(urls);
+    } catch (error) {
+        console.error('Error fetching API URLs:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+// Endpoint to fetch a specific number of rows from the top or bottom of the table
+router.get('/table/rows/:projectId', async (req, res) => {
+    const projectId = req.params.projectId;
+    const { limit = 10, from = 'top' } = req.query; // Default to 10 rows from the top
+
+    if (!projectId) {
+        return res.status(400).json({ message: 'Project ID is required' });
+    }
+
+    const tableName = `project_${projectId}`;
+    let query = '';
+
+    if (from === 'top') {
+        query = `SELECT * FROM ${tableName} ORDER BY timestamp ASC LIMIT ?`;
+    } else if (from === 'bottom') {
+        query = `SELECT * FROM ${tableName} ORDER BY timestamp DESC LIMIT ?`;
+    } else {
+        return res.status(400).json({ message: 'Invalid value for "from". Use "top" or "bottom".' });
+    }
+
+    db.all(query, [parseInt(limit)], (err, rows) => {
+        if (err) {
+            console.error('Error fetching rows:', err.message);
+            return res.status(500).json({ message: 'Server error' });
+        }
+        res.json({ rows });
+    });
+});
+
+
+
+// Endpoint to insert data into a project table
+router.post('/insert/:projectId', async (req, res) => {
+    const projectId = req.params.projectId;
+    const tableName = `project_${projectId}`;
+    const data = req.body; // Data to insert
+
+    // Construct the SQL query to insert data
+    const columns = Object.keys(data).map(key => `${key}`).join(', ');
+    const placeholders = Object.keys(data).map(() => '?').join(', ');
+    const values = Object.values(data);
+
+    const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
+
+    db.run(query, values, function(err) {
+        if (err) {
+            console.error('Error inserting data:', err.message);
+            return res.status(500).json({ message: 'Server error' });
+        }
+        res.status(200).json({ message: 'Data inserted successfully' });
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
 // Function to create a table
 function createTable(projectId, columnNames) {
     const tableName = `project_${projectId}`;
@@ -23,6 +116,18 @@ function createTable(projectId, columnNames) {
         }
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Route to create a project and its corresponding table
 router.post('/create', auth, async (req, res) => {

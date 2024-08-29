@@ -4,13 +4,10 @@ import { Link, useParams } from 'react-router-dom';
 import axios from 'axios'; // For making API requests
 import Table1 from './Table1';
 import { GlobalState } from './Global';
-import Chart1 from './Chart1'
-import Create1 from './Create1';
+import Chart1 from './Chart1';
+import Create11 from './Create11';
 import Create2 from './Create2';
 import Create3 from './Create3';
-import Create11 from './Create11';
-import Anlysis from './Anlysis';
-
 
 export default function View1() {
   const state = useContext(GlobalState);

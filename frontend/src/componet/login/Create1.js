@@ -7,7 +7,18 @@ export default class Create1 extends Component {
     super(props);
     this.state = {
       showModal: true,
+      restApiRead: '',
+      restApiWrite: '',
     };
+  }
+
+  async componentDidMount() {
+    const projectId = this.props.projectId; // Ensure you pass projectId as a prop or get it from context
+    const urls = this.generateRestApiUrls(projectId);
+    this.setState({
+      restApiRead: urls.read,
+      restApiWrite: urls.write,
+    });
   }
 
   handleCloseModal = () => {
@@ -19,16 +30,16 @@ export default class Create1 extends Component {
     alert('Copied to clipboard');
   }
 
-  handleNext = () => {
-    // Handle the "Next" button logic here
-    console.log("Next button clicked");
+  generateRestApiUrls = (projectId) => {
+    const baseUrl = `http://localhost:3001/project`;
+    return {
+      read: `${baseUrl}/table/${projectId}`,
+      write: `${baseUrl}/insert/${projectId}`
+    };
   }
 
   render() {
-    const restApiData = "https://api.example.com/data";
-    const quickData = "Quick data here...";
-    const mqttData = "mqtt://broker.example.com";
-    const coatData = "Coat data here...";
+    const { restApiRead, restApiWrite } = this.state;
 
     return (
       <Container className="mt-5">
@@ -45,31 +56,21 @@ export default class Create1 extends Component {
           <div className="mt-5">
             <h1>URLS</h1>
             <div className="p-3 mb-3 border rounded">
-              <h5>REST API</h5>
-              <p>{restApiData}</p>
-              <Button variant="outline-primary" onClick={() => this.handleCopy(restApiData)}>Copy</Button>
+              <h5>REST API Read</h5>
+              <p>{restApiRead}</p>
+              <Button variant="outline-primary" onClick={() => this.handleCopy(restApiRead)}>Copy</Button>
             </div>
 
             <div className="p-3 mb-3 border rounded">
-              <h5>Quick</h5>
-              <p>{quickData}</p>
-              <Button variant="outline-primary" onClick={() => this.handleCopy(quickData)}>Copy</Button>
+              <h5>REST API Write</h5>
+              <p>{restApiWrite}</p>
+              <Button variant="outline-primary" onClick={() => this.handleCopy(restApiWrite)}>Copy</Button>
             </div>
-
-            <div className="p-3 mb-3 border rounded">
-              <h5>MQTT</h5>
-              <p>{mqttData}</p>
-              <Button variant="outline-primary" onClick={() => this.handleCopy(mqttData)}>Copy</Button>
-            </div>
-
-            <div className="p-3 mb-3 border rounded">
-              <h5>Coat</h5>
-              <p>{coatData}</p>
-              <Button variant="outline-primary" onClick={() => this.handleCopy(coatData)}>Copy</Button>
-            </div>
-            <Link className='nav-link' to='/create3'><b><Button variant="success" className="mt-4" onClick={this.handleNext}>Next</Button></b></Link>
-
-            
+            <Link className='nav-link' to='/create3'>
+              <b>
+                <Button variant="success" className="mt-4" onClick={this.handleNext}>Next</Button>
+              </b>
+            </Link>
           </div>
         )}
       </Container>
