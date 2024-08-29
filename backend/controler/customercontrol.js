@@ -5,7 +5,7 @@ const Priest =require('../modules/pristModel')
 var nodemailer = require('nodemailer');
 require('dotenv').config()
 var crypto = require("crypto");
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const jwt =require('jsonwebtoken')
 
 const shopownercontrol ={
