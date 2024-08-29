@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Container, Button } from 'react-bootstrap';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios'; // For making API requests
 import Table1 from './Table1';
 import { GlobalState } from './Global';
@@ -9,6 +9,7 @@ import Create1 from './Create1';
 import Create2 from './Create2';
 import Create3 from './Create3';
 import Create11 from './Create11';
+import Anlysis from './Anlysis';
 
 
 export default function View1() {
@@ -47,7 +48,12 @@ export default function View1() {
       <Chart1/>
 
       <div className="d-grid gap-2">
-        <Button variant="primary" size="lg">AI</Button>
+        <Button variant="primary" size="lg">         
+                <Link className='nav-link' to='/Anlysis'><b>Anlysis</b></Link>
+        </Button>
+        <Button variant="primary" size="lg">         
+                <Link className='nav-link' to='/ai'><b>Predication</b></Link>
+        </Button>
         <Button 
           variant={showTable ? "danger" : "success"} 
           onClick={() => setShowTable(!showTable)}
@@ -62,6 +68,7 @@ export default function View1() {
       <Create11/>
       <Create2/>
       <Create3/>
+
     </Container>
   );
 }

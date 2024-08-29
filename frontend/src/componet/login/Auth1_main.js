@@ -12,6 +12,8 @@ import Profile from './Profile';
 import {DataProvider} from './Global'
 import Cloud0 from './Cloud0';
 import Logout from './Logout';
+import Anlysis from './Anlysis';
+import AI1 from './AI1';
 
 export default function Auth1_main() {
   return (
@@ -30,7 +32,9 @@ export default function Auth1_main() {
         <Route path='/create3' element={<Create3 />} />
         <Route path='/profile' element={<Profile />} />
         <Route path='/cloud0' element={<Cloud0 />} />
+        <Route path='/ai' element={<AI1 />} />
 
+        <Route path='/anlysis' element={<Anlysis/>} />
 
         {/* Handle dynamic project ID */}
         <Route path='/view/:id' element={<View1 />} />

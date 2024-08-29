@@ -4,8 +4,8 @@ export default class AI1 extends Component {
   render() {
     return (
       <div>
-        AI
-      </div>
+      Predication  
+              </div>
     )
   }
 }

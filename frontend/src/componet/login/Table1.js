@@ -2,8 +2,8 @@ import React from 'react';
 import { Table } from 'react-bootstrap';
 
 const sampleData = [
-  { column1: 'Data 1', column2: 'Data 2' },
-  { column1: 'Data 3', column2: 'Data 4' },
+  { column1: '10', column2: '20' },
+  { column1: '35', column2: '40' },
   // Add more rows as needed
 ];
 
