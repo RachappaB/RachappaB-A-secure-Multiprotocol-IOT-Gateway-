@@ -32,7 +32,7 @@ router.get('/api-urls/:projectId', async (req, res) => {
         const urls = generateApiUrls(projectId);
         res.json(urls);
     } catch (error) {
-        console.error('Error fetching API URLs:', error);
+        // console.error('Error fetching API URLs:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -60,7 +60,7 @@ router.get('/table/rows/:projectId', async (req, res) => {
 
     db.all(query, [parseInt(limit)], (err, rows) => {
         if (err) {
-            console.error('Error fetching rows:', err.message);
+            // console.error('Error fetching rows:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
         res.json({ rows });
@@ -84,7 +84,7 @@ router.post('/insert/:projectId', async (req, res) => {
 
     db.run(query, values, function(err) {
         if (err) {
-            console.error('Error inserting data:', err.message);
+            // console.error('Error inserting data:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
         res.status(200).json({ message: 'Data  successfully' });
@@ -111,9 +111,9 @@ function createTable(projectId, columnNames) {
 
     db.run(createTableSQL, (err) => {
         if (err) {
-            console.error(`Error creating table ${tableName}:`, err.message);
+            // console.error(`Error creating table ${tableName}:`, err.message);
         } else {
-            console.log(`Table ${tableName} created successfully.`);
+            // console.log(`Table ${tableName} created successfully.`);
         }
     });
 }
@@ -139,14 +139,14 @@ router.post('/create', auth, async (req, res) => {
         const newProject = new Project({ projectName, description, mode, owner, numOfColumns, columnNames: columnNamesdata });
         await newProject.save();
 
-        console.log('Project created, initiating table creation...');
+        // console.log('Project created, initiating table creation...');
 
         // Create a corresponding SQLite table
         createTable(newProject._id, columnNamesdata);
 
         res.status(200).json({ message: 'Project created successfully', projectId: newProject._id });
     } catch (error) {
-        console.error('Error creating project:', error);
+        // console.error('Error creating project:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -154,12 +154,12 @@ router.post('/create', auth, async (req, res) => {
 // Route to fetch a list of projects for the authenticated user
 router.get('/list', auth, async (req, res) => {
     try {
-        console.log("Fetching project list for user:", req.user.id);
+        // console.log("Fetching project list for user:", req.user.id);
 
         const projects = await Project.find({ owner: req.user.id }).select('projectName');
         res.json({ projects });
     } catch (error) {
-        console.error("Error fetching project list:", error);
+        // console.error("Error fetching project list:", error);
         res.status(500).json({ message: 'Server Error' });
     }
 });
@@ -167,7 +167,7 @@ router.get('/list', auth, async (req, res) => {
 // Route to fetch project details by ID
 router.get('/view/:id', auth, async (req, res) => {
     try {
-        console.log("Fetching project details for project ID:", req.params.id);
+        // console.log("Fetching project details for project ID:", req.params.id);
 
         const projectId = req.params.id;
         const project = await Project.findById(projectId).populate('owner', 'name email');
@@ -178,7 +178,7 @@ router.get('/view/:id', auth, async (req, res) => {
 
         res.json(project);
     } catch (error) {
-        console.error("Error fetching project data:", error);
+        // console.error("Error fetching project data:", error);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -188,13 +188,13 @@ router.get('/table/:projectId', async (req, res) => {
     const projectId = req.params.projectId;
     const tableName = `project_${projectId}`;
 
-    console.log(`Fetching data from table ${tableName}`);
+    // console.log(`Fetching data from table ${tableName}`);
 
     const query = `SELECT * FROM ${tableName}`;
 
     db.all(query, (err, rows) => {
         if (err) {
-            console.error('Error fetching table data:', err.message);
+            // console.error('Error fetching table data:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
         console.log('Fetched data:', rows);
@@ -210,7 +210,7 @@ router.get('/chart/:projectId', async (req, res) => {
     const query = `SELECT * FROM ${tableName}`;
     db.all(query, [], (err, rows) => {
       if (err) {
-        console.error('Error fetching table data:', err.message);
+        // console.error('Error fetching table data:', err.message);
         return res.status(500).json({ message: 'Server error' });
       }
       res.json({ rows });
@@ -223,17 +223,17 @@ router.get('/columns/:projectId', async (req, res) => {
     const projectId = req.params.projectId;
     const tableName = `project_${projectId}`;
 
-    console.log(`Fetching column names for table ${tableName}`);
+    // console.log(`Fetching column names for table ${tableName}`);
 
     const query = `PRAGMA table_info(${tableName})`;
 
     db.all(query, (err, rows) => {
         if (err) {
-            console.error('Error fetching column names:', err.message);
+            // console.error('Error fetching column names:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
         const columns = rows.map(row => row.name);
-        console.log('Fetched columns:', columns);
+        // console.log('Fetched columns:', columns);
         res.json({ columns });
     });
 });

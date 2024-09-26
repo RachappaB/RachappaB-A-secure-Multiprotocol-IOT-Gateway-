@@ -47,6 +47,7 @@ const createAccessToken = (user) => {
 
 app.get('/',function(req,res)
 {
+   
     res.json({msg:"welcome to server"})
 })
 app.listen(process.env.PORT,err=>{

@@ -17,22 +17,22 @@ function Navbar() {
             <div className='collapse navbar-collapse justify-content-end'  id='cnavbar'>
             <ul className='navbar-nav'>
             < li className='nav-item p-2 ' >
-                <Link className='nav-link' to='/'><h3>Home</h3></Link>
+                <Link className='nav-link navbar-dark' to='/'><h3 className='text-body'>Home</h3></Link>
             </li>
             
             < li className='nav-item p-2 ' >
-                <Link className='nav-link' to='/Services'><h3>Services</h3></Link>
+                <Link className='nav-link navbar-dark ' to='/Services'><h3 className='text-body'>Services</h3></Link>
             </li>
             <li className='nav-item p-2 '>
-                <Link className='nav-link' to='/about'><h3>About</h3></Link>
+                <Link className='nav-link' to='/about'><h3 className='text-body'>About</h3></Link>
             </li>
 
             < li className='nav-item p-2 ' >
-                <Link className='nav-link' to='/Login'><h3>Login</h3></Link>
+                <Link className='nav-link navbar-dark' to='/Login'><h3 className='text-body'>Login</h3></Link>
             </li>
 
             < li className='nav-item p-2 ' >
-                <Link className='nav-link' to='/Signup'><h3>signup</h3></Link>
+                <Link className='nav-link navbar-dark' to='/Signup'><h3 className='text-body'>signup</h3></Link>
             </li>
           
             
