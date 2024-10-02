@@ -87,10 +87,9 @@ router.post('/insert/:projectId', async (req, res) => {
             // console.error('Error inserting data:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
-        res.status(200).json({ message: 'Data  successfully' });
+        res.send();
     });
 });
-
 
 
 

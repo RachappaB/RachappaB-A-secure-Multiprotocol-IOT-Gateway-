@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Container } from 'react-bootstrap';
 import axios from 'axios';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 export default function Table1() {
     const [data, setData] = useState([]);
     const [columns, setColumns] = useState([]);
     const { id } = useParams(); // Get the project ID from the URL
 
-    const [projectId, setProjectId] = useState(id); // Example project ID
-
     useEffect(() => {
         const fetchTableData = async () => {
             try {
                 // Fetch table data
-                const response = await axios.get(`/project/table/${projectId}`);
+                const response = await axios.get(`/project/table/${id}`);
                 console.log('Fetched table data:', response.data); // Log fetched data
 
                 if (response.data && response.data.rows) {
@@ -22,7 +20,7 @@ export default function Table1() {
                 }
 
                 // Fetch column names
-                const columnResponse = await axios.get(`/project/columns/${projectId}`);
+                const columnResponse = await axios.get(`/project/columns/${id}`);
                 console.log('Fetched column names:', columnResponse.data); // Log column names
 
                 if (columnResponse.data && columnResponse.data.columns) {
@@ -34,7 +32,7 @@ export default function Table1() {
         };
 
         fetchTableData();
-    }, [projectId]);
+    }, [id]);
 
     return (
         <Container className="mt-4">
@@ -48,7 +46,7 @@ export default function Table1() {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((row, index) => (
+                    {data.slice().reverse().map((row, index) => (  // Reverse the order of rows before rendering
                         <tr key={index}>
                             {columns.map((column, colIndex) => (
                                 <td key={colIndex} style={{ border: '1px solid #ddd' }}>{row[column]}</td>

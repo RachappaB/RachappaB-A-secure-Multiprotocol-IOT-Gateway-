@@ -1,0 +1,16 @@
+Username: admin
+Password: act@123
+Device address: 192.168.0.1
+
+LAN: 
+IP address: 192.168.0.1
+Subnet mask: 255.255.255.0
+Hostname: dlinkapea0d.local
+
+Wi-Fi 2.4 GHz: 
+Network name: Rachappa_Router_EXT
+Password: RSB@123456
+
+Mode: Repeater
+Client SSID: Rachappa_mobile
+Client Password: RSB@123456
