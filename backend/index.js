@@ -1,9 +1,50 @@
 require('dotenv').config()
 const express = require('express')
+const mqtt = require('mqtt');
 const mongoose = require('mongoose')
 const cors = require('cors')
 const fileUpload = require('express-fileupload')
 const cookieParser = require('cookie-parser')
+
+// MQTT setup
+const mqttClient = mqtt.connect('mqtt://localhost:1883'); // Adjust to your MQTT broker's address
+
+// When connected to the MQTT broker
+mqttClient.on('connect', () => {
+    console.log('Connected to MQTT broker');
+    mqttClient.subscribe('project/+/data', (err) => {
+        if (err) {
+            console.error('Failed to subscribe to topic', err.message);
+        } else {
+            console.log('Subscribed to project data topics');
+        }
+    });
+});
+
+
+// Handling incoming messages
+mqttClient.on('message', (topic, message) => {
+    const topicParts = topic.split('/');
+    if (topicParts.length === 3 && topicParts[0] === 'project' && topicParts[2] === 'data') {
+        const projectId = topicParts[1];
+        const data = JSON.parse(message.toString());
+
+        const tableName = `project_${projectId}`;
+        const columns = Object.keys(data).join(', ');
+        const placeholders = Object.keys(data).map(() => '?').join(', ');
+        const values = Object.values(data);
+
+        const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
+
+        db.run(query, values, function (err) {
+            if (err) {
+                console.error(`Failed to insert data for project ${projectId}:`, err.message);
+            } else {
+                console.log(`Data inserted successfully into project_${projectId}`);
+            }
+        });
+    }
+});
 
 
 const app = express()

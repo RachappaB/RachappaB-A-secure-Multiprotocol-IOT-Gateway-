@@ -16,6 +16,7 @@
     "jstat": "^1.9.6",
     "mathjs": "^13.1.1",
     "mongoose": "^6.7.2",
+    "mqtt": "^5.10.1",
     "nodemailer": "^6.8.0",
     "nodemon": "^3.1.4",
     "razorpay": "^2.8.4",
