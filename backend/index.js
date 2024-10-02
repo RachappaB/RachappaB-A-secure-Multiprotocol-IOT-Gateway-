@@ -1,5 +1,8 @@
 require('dotenv').config()
 const express = require('express')
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./database.db'); // Adjust the path to your database file
+
 const mqtt = require('mqtt');
 const mongoose = require('mongoose')
 const cors = require('cors')
