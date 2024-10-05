@@ -1,0 +1,30 @@
+this is code must run in on enu
+
+
+
+sudo apt-get update
+sudo apt install python3-venv
+cd ~/ble  # Navigate to your project directory
+python3 -m venv venv  # Create a virtual environment named 'venv'
+source venv/bin/activate
+pip install bluepy
+
+sudo apt-get install python3-pip
+sudo apt-get install python3-dev
+sudo apt-get install libglib2.0-dev
+pip3 install bluepy
+sudo usermod -aG bluetooth $USER
+
+
+
+
+pip install pexpect
+sudo apt-get install python3-bluepy
+source new_venv/bin/activate
+pip install bluepy
+
+
+bluetoothctl
+power on
+scan on
+pair mac
