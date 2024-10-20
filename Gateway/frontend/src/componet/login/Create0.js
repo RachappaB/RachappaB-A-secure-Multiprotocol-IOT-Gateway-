@@ -9,6 +9,7 @@ export default function Create0() {
     const [token] = state.token;
     const [projectName, setProjectName] = useState('');
     const [description, setDescription] = useState('');
+    const [apiKey, setapiKey] = useState('');
     const [mode, setMode] = useState('Hard');
     const [numOfColumns, setNumOfColumns] = useState(0);
     const [columnNames, setColumnNames] = useState([]);
@@ -19,6 +20,10 @@ export default function Create0() {
         const { name, value } = e.target;
         if (name === 'projectName') setProjectName(value);
         if (name === 'description') setDescription(value);
+        if (name === 'apiKey') setapiKey(value);
+
+
+
     };
 
     const handleModeChange = (e) => {
@@ -45,6 +50,7 @@ export default function Create0() {
         const projectData = {
             projectName,
             description,
+            apiKey,
             mode,
             numOfColumns,
             columnNamesdata: columnNames, // Match backend's expected key
@@ -89,6 +95,16 @@ export default function Create0() {
                         name="description"
                         value={description}
                         onChange={handleChange}
+                    />
+                </Form.Group>
+                <Form.Group className="mb-3" controlId="formProjectName">
+                    <Form.Label>APIKEY</Form.Label>
+                    <Form.Control
+                        type="text"
+                        name="apiKey"
+                        value={apiKey}
+                        onChange={handleChange}
+                        required
                     />
                 </Form.Group>
 

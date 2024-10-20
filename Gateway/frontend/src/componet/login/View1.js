@@ -60,6 +60,11 @@ export default function View1() {
         <Button variant="secondry" size="lg">         
                 <Link className='nav-link' to='/ai'><b>Predication</b></Link>
         </Button>
+     
+        <Button variant="secondry" size="lg">         
+        <Link className=''  to={`/push_to_Cloud/${id}`}>push to cloud</Link>
+
+        </Button>
         <Button 
           variant={showTable ? "danger" : "success"} 
           onClick={() => setShowTable(!showTable)}

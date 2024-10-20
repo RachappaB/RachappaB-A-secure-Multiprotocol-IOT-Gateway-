@@ -6,7 +6,95 @@ const Users = require('../modules/customerModel');
 const Project = require('../modules/projectModel');
 const auth = require('../middleware/auth');
 const { Query } = require('mongoose');
+const axios = require('axios'); // Make sure to require axios at the top of your file
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Function to fetch data and push to ThingSpeak
+async function pushDataToThingSpeak(projectId) {
+    try {
+        // Step 1: Fetch the project details, including the API key and lastPushed timestamp
+        const project = await Project.findById(projectId);
+        if (!project) {
+            console.error(`Project with ID ${projectId} not found.`);
+            return;
+        }
+
+        const { apiKey, lastPushed } = project;
+        console.log(`Using API Key: ${apiKey}, Last Pushed: ${lastPushed}`);
+
+        const tableName = `project_${projectId}`;
+
+        // Step 2: Fetch column names dynamically from the SQLite table
+        const pragmaSQL = `PRAGMA table_info(${tableName});`;
+
+        db.all(pragmaSQL, (err, columns) => {
+            if (err) {
+                console.error(`Error fetching columns for table ${tableName}:`, err.message);
+                return;
+            }
+
+            const columnNames = columns
+                .map(col => col.name)
+                .filter(name => name !== 'timestamp'); // Exclude the timestamp column
+
+            console.log(`Detected columns: ${columnNames.join(', ')}`);
+
+            // Step 3: Query to fetch new rows since the lastPushed timestamp
+            const selectSQL = `
+                SELECT ${columnNames.join(', ')}, timestamp 
+                FROM ${tableName} 
+                WHERE timestamp > ? 
+                ORDER BY timestamp ASC`;
+
+            console.log(`Executing SQL: ${selectSQL}`);
+
+            db.all(selectSQL, [lastPushed], async (err, rows) => {
+                if (err) {
+                    console.error(`Error reading from table ${tableName}:`, err.message);
+                    return;
+                }
+
+                if (rows.length > 0) {
+                    console.log(`Fetched ${rows.length} new rows from ${tableName}.`);
+
+                    for (const [index, row] of rows.entries()) {
+                        // Construct the ThingSpeak API URL
+                        const fieldParams = columnNames.map((col, i) => `field${i + 1}=${row[col]}`).join('&');
+                        const url = `https://api.thingspeak.com/update?api_key=${apiKey}&${fieldParams}`;
+
+                        console.log(`Sending data to ThingSpeak: ${url}`);
+
+                        try {
+                            const response = await axios.get(url);
+                            console.log(`Row ${index + 1}: Data sent successfully. Response: ${response.data}`);
+
+                            // Update the lastPushed timestamp in the project
+                            await Project.findByIdAndUpdate(projectId, { lastPushed: row.timestamp });
+                        } catch (error) {
+                            console.error(`Row ${index + 1}: Error sending data to ThingSpeak:`, error.message);
+                        }
+                    }
+                } else {
+                    console.log(`No new data found in table ${tableName}.`);
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error pushing data to ThingSpeak:', error.message);
+    }
+}
 
 
 
@@ -32,6 +120,23 @@ router.get('/api-urls/:projectId', async (req, res) => {
         }
         const urls = generateApiUrls(projectId);
         res.json(urls);
+    } catch (error) {
+        // console.error('Error fetching API URLs:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.get('/pushdata/:projectId', async (req, res) => {
+    try {
+        const projectId = req.params.projectId;
+        if (!projectId) {
+            return res.status(400).json({ message: 'Project ID is required' });
+        }
+        // const columns = ['data', 'humidity']; // List of columns to send
+
+        pushDataToThingSpeak(projectId);
+
+        res.sendStatus(200);
     } catch (error) {
         // console.error('Error fetching API URLs:', error);
         res.status(500).json({ message: 'Server error' });
@@ -113,6 +218,7 @@ router.post('/insert/:projectId', (req, res) => {
         const tableName = `project_${projectId}`;
         const requestIp = req.ip; // Get the request IP address
 
+
         // Log the incoming request details
         console.log(`Incoming request from IP: ${requestIp} for project table: ${tableName}`);
 
@@ -134,7 +240,7 @@ router.post('/insert/:projectId', (req, res) => {
                 console.log(`IP ${requestIp} is authorized to access table ${tableName}.`);
 
                 const data = req.body; // Data to insert
-
+console.log(data)
                 if (Object.keys(data).length === 0) {
                     return res.status(400).json({ message: 'No data provided for insertion.' });
                 }
@@ -205,14 +311,14 @@ router.post('/create', auth, async (req, res) => {
     try {
         const owner = await Users.findById(req.user.id);
 
-        const { projectName, description, mode, numOfColumns, columnNamesdata } = req.body;
-        const newProject = new Project({ projectName, description, mode, owner, numOfColumns, columnNames: columnNamesdata });
+        const { projectName, description,apiKey, mode, numOfColumns, columnNamesdata } = req.body;
+        const newProject = new Project({ projectName, description,apiKey, mode, owner, numOfColumns, columnNames: columnNamesdata });
         await newProject.save();
 
         // console.log('Project created, initiating table creation...');
 
         // Create a corresponding SQLite table
-        createTable(newProject._id, columnNamesdata);
+        createTable(newProject._id,columnNamesdata);
 
         res.status(200).json({ message: 'Project created successfully', projectId: newProject._id });
     } catch (error) {

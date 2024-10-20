@@ -156,12 +156,18 @@ app.use(cors({
     credentials: true // Allow credentials (cookies, authorization headers)
 }));
 
-//connect to mongodb
-mongoose.connect(process.env.MONGODB_URI,  err =>{
-    if(err) throw err;
-    console.log('CONNECTED  TO MONGODB')
-}
-)
+const uri = 'mongodb://root:password@localhost:27017/admin'; // Replace with your MongoDB URI
+
+mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => {
+    console.log('MongoDB connected successfully');
+})
+.catch(err => {
+    console.error('MongoDB connection error:', err);
+});
 
 //Router
 app.use('/customer',require('./router/cutomer'))
@@ -227,14 +233,16 @@ function ipaddtable() {
     const tableName = `ipaddtable`; // Name of the table where we store IP addresses and metadata
 
     // Defining columns for the table and adding a unique constraint on (ip, projectid)
+  
     const columns = `
+        id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Auto-incrementing unique identifier
         ip TEXT NOT NULL,
         userid TEXT NOT NULL,
         projectid TEXT NOT NULL,
         tableName TEXT NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (ip, projectid)  -- Composite primary key to enforce uniqueness
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     `;
+    
 
     // Create the table if it doesn't exist
     const createTableSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns});`;

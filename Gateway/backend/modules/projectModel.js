@@ -10,6 +10,11 @@ const projectSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    apiKey: {
+        type: String,
+        required: true,
+        trim: true
+    },
     mode: {
         type: String,
         enum: ['Hard', 'Easy'],
@@ -17,8 +22,8 @@ const projectSchema = new mongoose.Schema({
     },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Customer', // assuming you have a Customer model
-        required: true // fixed typo here
+        ref: 'Customer', // Assuming you have a Customer model
+        required: true
     },
     numOfColumns: {
         type: Number,
@@ -31,6 +36,10 @@ const projectSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    lastPushed: {
+        type: Date,
+        default: Date.now // Initialize to the creation time
     }
 });
 
