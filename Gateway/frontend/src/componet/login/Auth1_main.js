@@ -18,6 +18,7 @@ import Table1 from './Table1';
 import Addblemac from './Addblemac';
 import Addwifiip from './Addwifiip';
 import Push_to_Cloud from './Push_to_Cloud'
+import XMLFILE from './XMLFILE';
 export default function Auth1_main() {
   return (
     <DataProvider>
@@ -37,6 +38,12 @@ export default function Auth1_main() {
         <Route path='/cloud0' element={<Cloud0 />} />
         <Route path='/ai' element={<AI1 />} />
         <Route path='/anlysis/:projectId' element={<Anlysis />} />
+        
+
+        <Route path='/download/:projectId' element={<XMLFILE />} />
+
+
+           
         <Route path='/push_to_Cloud/:projectId' element={ <Push_to_Cloud/> } />
 
         {/* Handle dynamic project ID */}

@@ -54,6 +54,10 @@ export default function View1() {
 
         </Button>
         <Button variant="secondry" size="lg">         
+        <Link className=''  to={`/download/${id}`}>get xml</Link>
+
+        </Button>
+        <Button variant="secondry" size="lg">         
         <Link className=''  to={`/Addblemac/${id}`}>ADD MACfor</Link>
 
         </Button>

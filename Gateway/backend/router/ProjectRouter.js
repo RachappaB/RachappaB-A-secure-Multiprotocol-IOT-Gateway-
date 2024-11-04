@@ -10,7 +10,7 @@ const axios = require('axios'); // Make sure to require axios at the top of your
 
 
 
-
+const { Parser } = require('json2csv');
 
 
 
@@ -142,6 +142,185 @@ router.get('/pushdata/:projectId', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+
+
+// anlysis data 
+
+// Analysis route: Execute instructions on project-specific tables
+
+router.post('/analyze/:projectId', async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { instruction } = req.body;
+
+    if (!projectId || !instruction) {
+      return res.status(400).json({ message: 'Project ID and instruction are required' });
+    }
+
+    const tableName = `project_${projectId}`;
+    console.log(`Using table: ${tableName}`);
+
+    // Check if the table exists
+    const checkTableSQL = `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
+    db.get(checkTableSQL, [tableName], (err, row) => {
+      if (err) {
+        console.error(`Error checking table: ${err.message}`);
+        return res.status(500).json({ message: 'Database error' });
+      }
+
+      if (!row) {
+        return res.status(404).json({ message: `Table for project ${projectId} does not exist.` });
+      }
+
+      // Validate the instruction to ensure only SELECT operations are allowed
+      const sql = instruction.replace('$table', tableName).trim();
+      if (!sql.toUpperCase().startsWith('SELECT')) {
+        return res.status(400).json({ message: 'Only SELECT instructions are allowed.' });
+      }
+
+      console.log(`Executing SQL: ${sql}`);
+
+      // Execute the instruction
+      db.all(sql, [], (err, rows) => {
+        if (err) {
+          console.error(`Error executing instruction: ${err.message}`);
+          return res.status(400).json({ message: 'Invalid instruction', error: err.message });
+        }
+      
+        console.log(`Instruction executed: ${sql}`);
+        console.log('Query Result:', rows); // Add this line to log the result
+      
+        res.status(200).json({ message: 'Instruction executed successfully', data: rows });
+      });
+      
+    });
+  } catch (error) {
+    console.error('Error processing instruction:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Function to generate CSV content based on project and table data
+function generateCSVContent(project, tableData) {
+    const fields = project.columnNames; // Columns for CSV from project data
+    fields.push('timestamp'); // Add timestamp as a column
+    
+    // Prepare the rows with appropriate column names
+    const csvParser = new Parser({ fields });
+    const csvContent = csvParser.parse(tableData);
+    return csvContent;
+}
+
+// Route to download CSV for a specific project
+router.get('/download/:projectId', async (req, res) => {
+    try {
+        const { projectId } = req.params;
+
+        // Fetch project details from MongoDB
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+
+        // Query SQLite database for table data
+        const tableName = `project_${projectId}`;
+        const query = `SELECT * FROM ${tableName}`;
+        db.all(query, (err, rows) => {
+            if (err) {
+                console.error(`Error querying table ${tableName}:`, err.message);
+                return res.status(500).json({ message: 'Error fetching table data' });
+            }
+
+            // Generate CSV content based on project and table data
+            const csvContent = generateCSVContent(project, rows);
+
+            // Set headers and send CSV content as a downloadable file
+            res.setHeader('Content-Disposition', `attachment; filename="project_${projectId}.csv"`);
+            res.setHeader('Content-Type', 'text/csv');
+            res.send(csvContent);
+        });
+    } catch (error) {
+        console.error('Error generating CSV file:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Endpoint to fetch a specific number of rows from the top or bottom of the table
