@@ -7,10 +7,190 @@ const Project = require('../modules/projectModel');
 const auth = require('../middleware/auth');
 const { Query } = require('mongoose');
 const axios = require('axios'); // Make sure to require axios at the top of your file
+const { exec } = require('child_process');
 
-
+const path = require('path');
+const fs = require('fs');
 
 const { Parser } = require('json2csv');
+
+const multer = require('multer');
+
+// Serve static files from the 'codes' directory
+// Serve static files from the 'codes' directory
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Set up multer for file uploads
+// const upload = multer({
+//     dest: path.join(__dirname, '../codes'), // Temporary destination
+//     fileFilter: (req, file, cb) => {
+//         if (file.mimetype !== 'text/x-python-script') {
+//             return cb(new Error('Only .py files are allowed'), false);
+//         }
+//         cb(null, true);
+//     }
+// });
+
+
+// Route to upload a .py file and store it in the 'codes' folder
+
+const upload = multer({ dest: 'uploads/' }); // Set your preferred directory
+
+router.post('/upload_python', upload.single('pythonFile'), (req, res) => {
+    console.log('--- File Upload Endpoint Hit ---');
+    console.log('Request received at:', new Date().toISOString());
+
+    if (!req.file) {
+        console.log('No file uploaded');
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    console.log('File details:', req.file);
+
+    const tempPath = req.file.path;
+    const targetPath = path.join(__dirname, '../codes', req.file.originalname);
+
+    fs.rename(tempPath, targetPath, (err) => {
+        if (err) {
+            console.error('Error moving file:', err);
+            return res.status(500).json({ message: 'Error saving file', error: err.message });
+        }
+        res.json({ message: 'File uploaded successfully', location: `/codes/${req.file.originalname}` });
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+router.use('/images', (req, res, next) => {
+    const staticPath = path.join(__dirname, '../codes');
+    console.log(`Serving static files from: ${staticPath}`);
+
+    // This middleware serves static files
+    express.static(staticPath)(req, res, (err) => {
+        if (err) {
+            console.error(`Error serving file: ${err}`);
+            return res.status(500).send('Error while serving static file.');
+        }
+        next();  // Proceed to the next middleware if no error
+    });
+});
+
+
+// Endpoint to run the Python script and return image URLs or other outputs
+// Endpoint to run the Python script and return image URLs or other outputs
+router.get('/python', (req, res) => {
+    let outputList = [];  // Initialize the output list
+    console.log("python code is running")
+
+    // Run the Python script
+    exec('python3 codes/1.py', (error, stdout, stderr) => {
+        if (error) {
+            console.error('Error executing the Python script:', error);
+            return res.status(500).json({ message: 'Error executing Python script', error: error.message });
+        }
+        if (stderr) {
+            console.error('Python script stderr:', stderr);
+            return res.status(500).json({ message: 'Python script error', error: stderr });
+        }
+
+        try {
+            // Parse the JSON output from the Python script
+            const jsonData = JSON.parse(stdout.trim());
+
+            // Check if the output contains graph and other data
+            if (jsonData.outputs && jsonData.outputs.length > 0) {
+                jsonData.outputs.forEach(output => {
+                    if (output.type === 'graph') {
+                        // Adjust the path for the image (relative to the static folder)
+                        const imageUrl = `/images/${path.basename(output.location)}`;
+                        output.location = imageUrl;
+                        console.log(imageUrl);
+                    }
+                    outputList.push(output);
+                });
+            }
+
+            // Return the output list as a JSON response
+            res.json({ outputs: outputList });
+
+        } catch (parseError) {
+            console.error('Error parsing JSON from Python output:', parseError);
+            return res.status(500).json({ message: 'Error parsing JSON from Python output', error: parseError.message });
+        }
+    });
+});
+
+
+
+
+
 
 
 
@@ -518,6 +698,9 @@ router.get('/list', auth, async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
+
+
+
 
 // Route to fetch project details by ID
 router.get('/view/:id', auth, async (req, res) => {

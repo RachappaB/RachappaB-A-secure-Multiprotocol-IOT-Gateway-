@@ -1,0 +1,7 @@
+# test_bluepy.py
+try:
+    from bluepy import btle
+    print("Successfully imported bluepy and btle.")
+except ImportError as e:
+    print(f"ImportError: {e}")
+
