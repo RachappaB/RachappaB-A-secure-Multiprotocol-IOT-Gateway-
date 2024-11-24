@@ -111,6 +111,7 @@ export default function Addwifiip() {
           <thead>
             <tr>
               <th>MAC Address</th>
+              <th>SECURE KEY</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -118,6 +119,8 @@ export default function Addwifiip() {
             {iplist.map((mac) => (
               <tr key={mac.ip}>
                 <td>{mac.ip}</td>
+                <td>{mac.key}</td>
+
                 <td>
                   <Button
                     variant="danger"

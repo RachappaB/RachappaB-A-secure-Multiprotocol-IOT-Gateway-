@@ -69,6 +69,10 @@ export default function View1() {
         <Link className=''  to={`/push_to_Cloud/${id}`}>push to cloud</Link>
 
         </Button>
+        <Button variant="secondry" size="lg">         
+        <Link className=''  to={`/addpythoncode/${id}`}> Add python code </Link>
+
+        </Button>
         <Button 
           variant={showTable ? "danger" : "success"} 
           onClick={() => setShowTable(!showTable)}

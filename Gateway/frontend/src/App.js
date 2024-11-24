@@ -11,6 +11,7 @@ import SignUP from './componet/non-login/SignUP';
 
 
 import { BrowserRouter, Link, Route, Router, Routes } from 'react-router-dom';
+import FileUpload from './componet/login/Add_python_code';
 
 
 
@@ -18,14 +19,15 @@ import { BrowserRouter, Link, Route, Router, Routes } from 'react-router-dom';
 function App() {
   return (
     <>
-    <BrowserRouter>
+    {/* <BrowserRouter>
     <Navbar/>
     <ul>
       <li>
         <Link to ={'/'}>Home</Link>
       </li>
     </ul>
-    </BrowserRouter>
+    </BrowserRouter> */}
+    <FileUpload/>
     
     </>
     

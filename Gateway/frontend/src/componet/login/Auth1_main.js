@@ -19,6 +19,8 @@ import Addblemac from './Addblemac';
 import Addwifiip from './Addwifiip';
 import Push_to_Cloud from './Push_to_Cloud'
 import XMLFILE from './XMLFILE';
+import Add_python_code from './Add_python_code';
+import FileUpload from './Add_python_code';
 export default function Auth1_main() {
   return (
     <DataProvider>
@@ -45,6 +47,7 @@ export default function Auth1_main() {
 
            
         <Route path='/push_to_Cloud/:projectId' element={ <Push_to_Cloud/> } />
+        <Route path='/addpythoncode/:projectId' element={ <FileUpload/> } />
 
         {/* Handle dynamic project ID */}
         <Route path='/view/:id' element={<View1 />} />

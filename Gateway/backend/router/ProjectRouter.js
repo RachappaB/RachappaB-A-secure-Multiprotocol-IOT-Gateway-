@@ -16,176 +16,119 @@ const { Parser } = require('json2csv');
 
 const multer = require('multer');
 
-// Serve static files from the 'codes' directory
-// Serve static files from the 'codes' directory
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Set up multer for file uploads
-// const upload = multer({
-//     dest: path.join(__dirname, '../codes'), // Temporary destination
-//     fileFilter: (req, file, cb) => {
-//         if (file.mimetype !== 'text/x-python-script') {
-//             return cb(new Error('Only .py files are allowed'), false);
-//         }
-//         cb(null, true);
-//     }
-// });
-
-
-// Route to upload a .py file and store it in the 'codes' folder
-
-const upload = multer({ dest: 'uploads/' }); // Set your preferred directory
-
-router.post('/upload_python', upload.single('pythonFile'), (req, res) => {
-    console.log('--- File Upload Endpoint Hit ---');
-    console.log('Request received at:', new Date().toISOString());
-
-    if (!req.file) {
-        console.log('No file uploaded');
-        return res.status(400).json({ message: 'No file uploaded' });
+// Set up multer for file storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/'); // Store files in the 'uploads' folder
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname)); // Add a unique timestamp to the file name
     }
-
-    console.log('File details:', req.file);
-
-    const tempPath = req.file.path;
-    const targetPath = path.join(__dirname, '../codes', req.file.originalname);
-
-    fs.rename(tempPath, targetPath, (err) => {
-        if (err) {
-            console.error('Error moving file:', err);
-            return res.status(500).json({ message: 'Error saving file', error: err.message });
-        }
-        res.json({ message: 'File uploaded successfully', location: `/codes/${req.file.originalname}` });
-    });
-});
+  });
 
 
+const upload = multer({ storage: storage });
 
+// Create 'uploads' directory if it doesn't exist
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+router.post('/upload/:projectId', upload.single('file'), (req, res) => {
+    try {
+        const { projectId } = req.params;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-router.use('/images', (req, res, next) => {
-    const staticPath = path.join(__dirname, '../codes');
-    console.log(`Serving static files from: ${staticPath}`);
-
-    // This middleware serves static files
-    express.static(staticPath)(req, res, (err) => {
-        if (err) {
-            console.error(`Error serving file: ${err}`);
-            return res.status(500).send('Error while serving static file.');
-        }
-        next();  // Proceed to the next middleware if no error
-    });
-});
-
-
-// Endpoint to run the Python script and return image URLs or other outputs
-// Endpoint to run the Python script and return image URLs or other outputs
-router.get('/python', (req, res) => {
-    let outputList = [];  // Initialize the output list
-    console.log("python code is running")
-
-    // Run the Python script
-    exec('python3 codes/1.py', (error, stdout, stderr) => {
-        if (error) {
-            console.error('Error executing the Python script:', error);
-            return res.status(500).json({ message: 'Error executing Python script', error: error.message });
-        }
-        if (stderr) {
-            console.error('Python script stderr:', stderr);
-            return res.status(500).json({ message: 'Python script error', error: stderr });
+        if (!projectId) {
+            return res.status(400).json({ message: 'Project ID is required.' });
         }
 
-        try {
-            // Parse the JSON output from the Python script
-            const jsonData = JSON.parse(stdout.trim());
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
 
-            // Check if the output contains graph and other data
-            if (jsonData.outputs && jsonData.outputs.length > 0) {
-                jsonData.outputs.forEach(output => {
-                    if (output.type === 'graph') {
-                        // Adjust the path for the image (relative to the static folder)
-                        const imageUrl = `/images/${path.basename(output.location)}`;
-                        output.location = imageUrl;
-                        console.log(imageUrl);
-                    }
-                    outputList.push(output);
-                });
+        const tableName = 'fileTable';
+        const originalFileName = req.file.originalname; // Original file name
+        const storedFileName = req.file.filename; // Name stored in the server
+        const fileAddress = req.file.path; // Path where the file is stored
+        const fileDetails = req.file.mimetype; // MIME type of the file
+
+        // Insert file details into the fileTable
+        const insertQuery = `
+            INSERT INTO ${tableName} (projectId, originalFileName, storedFileName, fileAddress, fileDetails) 
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        const values = [projectId, originalFileName, storedFileName, fileAddress, fileDetails];
+
+        db.run(insertQuery, values, function (err) {
+            if (err) {
+                console.error(`Error inserting file details into ${tableName}:`, err.message);
+                return res.status(500).json({ message: 'Server error while saving file details.' });
             }
 
-            // Return the output list as a JSON response
-            res.json({ outputs: outputList });
-
-        } catch (parseError) {
-            console.error('Error parsing JSON from Python output:', parseError);
-            return res.status(500).json({ message: 'Error parsing JSON from Python output', error: parseError.message });
-        }
-    });
+            console.log(`File details inserted into ${tableName} successfully.`);
+            res.status(200).json({
+                message: 'File uploaded and details saved successfully.',
+                fileDetails: {
+                    id: this.lastID, // ID of the inserted row
+                    projectId,
+                    originalFileName,
+                    storedFileName,
+                    fileAddress,
+                    fileDetails
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Error in upload route:', error.message);
+        res.status(500).json({ message: 'Server error.' });
+    }
 });
+
+
+
+
+
+router.get('/files/:projectId', async (req, res) => {
+    try {
+        const { projectId } = req.params;
+
+        if (!projectId) {
+            return res.status(400).json({ message: 'Project ID is required.' });
+        }
+
+        const tableName = 'fileTable';
+        const query = `SELECT originalFileName, storedFileName, fileAddress, fileDetails FROM ${tableName} WHERE projectId = ?`;
+
+        db.all(query, [projectId], (err, rows) => {
+            if (err) {
+                console.error(`Error fetching files for project ${projectId}:`, err.message);
+                return res.status(500).json({ message: 'Server error while fetching files.' });
+            }
+
+            if (rows.length === 0) {
+                return res.status(404).json({ message: 'No files found for the specified project.' });
+            }
+
+            // Respond with the list of files
+            res.status(200).json({
+                message: 'Files fetched successfully.',
+                files: rows.map(row => ({
+                    originalFileName: row.originalFileName,
+                    storedFileName: row.storedFileName,
+                    fileAddress: row.fileAddress,
+                    fileDetails: row.fileDetails
+                }))
+            });
+        });
+    } catch (error) {
+        console.error('Error in fetch files route:', error.message);
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
+
 
 
 
@@ -282,10 +225,15 @@ async function pushDataToThingSpeak(projectId) {
 
 function generateApiUrls(projectId) {
     const baseUrl = 'http://localhost:3001/project';
+    const baseUrl1 = 'http://localhost:3001/wifisendcrptic';
+
     return {
+        writesecureurl:`${baseUrl1}/secure-insert/${projectId}`,
         writeUrl: `${baseUrl}/insert/${projectId}`, // Endpoint to insert data
         limitUlr: `${baseUrl}/table/rows/${projectId}?limit=10&from=top`,
-        readUrl: `${baseUrl}/table/${projectId}`   // Endpoint to read data
+        readUrl: `${baseUrl}/table/${projectId}`   ,// Endpoint to read data
+        readsecureurl: `${baseUrl1}/secure-insert/${projectId}`
+
     };
 }
 
@@ -599,7 +547,7 @@ router.post('/insert/:projectId', (req, res) => {
                 console.log(`IP ${requestIp} is authorized to access table ${tableName}.`);
 
                 const data = req.body; // Data to insert
-console.log(data)
+                console.log(data)
                 if (Object.keys(data).length === 0) {
                     return res.status(400).json({ message: 'No data provided for insertion.' });
                 }
@@ -756,38 +704,36 @@ router.post('/addmac', auth, async (req, res) => {
 
 
 
-// Route to get list of MAC addresses for a specific project
-router.get('/:id/macs', async (req, res) => {
-    console.log("**********");
-    const projectId = req.params.id;
+// Route to add a new MAC address to a project
+router.post('/addmac', auth, async (req, res) => {
+    const { macAddress, projectId } = req.body;
     const tableName = `project_${projectId}`;
-    console.log(tableName);
 
-    if (!projectId) {
-        return res.status(400).json({ message: 'Project ID is required' });
+    const owner = await Users.findById(req.user.id);
+    const userid = owner.email;
+
+    // Check if required fields are present
+    if (!macAddress || !userid || !projectId || !tableName) {
+        return res.status(400).json({ message: 'macAddress, projectId, and other required fields are missing' });
     }
 
-    try {
-        // SQL query to fetch MAC addresses associated with the project
-        const query = `SELECT * FROM macaddressTable WHERE tableName = ?`;
-        console.log(query);
+    // Generate a random key
+    const key = randomGenerateKey();
 
-        // Execute the query
-        db.all(query, [tableName], (err, rows) => {
-            if (err) {
-                console.error('Database error:', err.message);
-                return res.status(500).json({ message: 'Database error', error: err.message });
-            }
-            console.log(rows);
-            res.json(rows);
-        });
-    } catch (error) {
-        console.error('Server error:', error.message);
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
+    // SQL query to insert data into macaddressTable
+    const query = `
+        INSERT INTO macaddressTable (macAddress, userid, projectid, tableName, key)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+    db.run(query, [macAddress, userid, projectId, tableName, key], function (err) {
+        if (err) {
+            console.error('Error inserting MAC address:', err.message);
+            return res.status(500).json({ message: 'Server error' });
+        }
+
+        res.status(201).json({ message: 'MAC address added successfully', key });
+    });
 });
-
-
 
 
 
@@ -839,36 +785,53 @@ router.delete('/:id/macs/:mac', auth, async (req, res) => {
 
 
 
+// Function to generate a random 20-character key
+function randomGenerateKey() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 20; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
 
 
-// Route to add a new MAC address to a project
+
+
+
+
+
+
+
+
+
+// Route to add a new IP address to a project
 router.post('/addip', auth, async (req, res) => {
-    // console.log("*****************");
     const { ip, projectId } = req.body;
     const tableName = `project_${projectId}`;
-    
+
     const owner = await Users.findById(req.user.id);
     const userid = owner.email;
-
-    // console.log(ip, userid, projectId, tableName);
 
     // Check if required fields are present
     if (!ip || !userid || !projectId || !tableName) {
         return res.status(400).json({ message: 'ip, projectId, and other required fields are missing' });
     }
 
-    // SQL query to insert MAC address and project details into macaddressTable
-    const query = `INSERT INTO ipaddtable (ip, userid, projectid, tableName) VALUES (?, ?, ?, ?)`;
-    db.run(query, [ip, userid, projectId, tableName], function (err) {
+    // Generate a random key
+    const key = randomGenerateKey();
+
+    // SQL query to insert data into ipaddtable
+    const query = `INSERT INTO ipaddtable (ip, userid, projectid, tableName, key) VALUES (?, ?, ?, ?, ?)`;
+    db.run(query, [ip, userid, projectId, tableName, key], function (err) {
         if (err) {
-            console.error('Error inserting MAC address to project:', err.message);
+            console.error('Error inserting IP address to project:', err.message);
             return res.status(500).json({ message: 'Server error' });
         }
 
-        res.status(201).json({ message: 'ip address added to project successfully' });
+        res.status(201).json({ message: 'IP address added to project successfully', key });
     });
 });
-
 
 
 

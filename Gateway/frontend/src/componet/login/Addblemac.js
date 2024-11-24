@@ -110,6 +110,7 @@ export default function Addblemac() {
           <thead>
             <tr>
               <th>MAC Address</th>
+              <th>Secure key</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -117,6 +118,7 @@ export default function Addblemac() {
             {macList.map((mac) => (
               <tr key={mac.macAddress}>
                 <td>{mac.macAddress}</td>
+                <td>{mac.key}</td>
                 <td>
                   <Button
                     variant="danger"
