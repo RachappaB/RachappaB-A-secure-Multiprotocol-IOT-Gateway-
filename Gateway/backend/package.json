@@ -24,6 +24,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.8.0",
     "nodemon": "^3.1.4",
+    "os": "^0.1.2",
     "path": "^0.12.7",
     "razorpay": "^2.8.4",
     "sequelize": "^6.37.4",

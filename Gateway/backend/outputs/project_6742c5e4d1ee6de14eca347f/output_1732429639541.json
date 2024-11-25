@@ -1,0 +1,23 @@
+{
+  "outputs": [
+    {
+      "type": "graph",
+      "location": "codes/random_bar1_graph.png"
+    },
+    {
+      "type": "text",
+      "message": "Random graph generated successfully"
+    },
+    {
+      "type": "file",
+      "details": {
+        "id": 1,
+        "projectId": "6742c5e4d1ee6de14eca347f",
+        "originalFileName": "example.py",
+        "storedFileName": "1732429547026.py",
+        "fileAddress": "uploads/1732429547026.py",
+        "fileDetails": "text/x-python"
+      }
+    }
+  ]
+}

@@ -51,27 +51,8 @@ export default class Create2 extends Component {
 
     return (
       <Container className="mt-5">
-        <h2>Manage Addresses</h2>
 
-        <div className="mb-4">
-          <h4>REST API</h4>
-          {this.renderAddressList(restApiAddresses, 'restApiAddresses')}
-        </div>
-
-        <div className="mb-4">
-          <h4>Quick</h4>
-          {this.renderAddressList(quickAddresses, 'quickAddresses')}
-        </div>
-
-        <div className="mb-4">
-          <h4>MQTT</h4>
-          {this.renderAddressList(mqttAddresses, 'mqttAddresses')}
-        </div>
-
-        <div className="mb-4">
-          <h4>Coat</h4>
-          {this.renderAddressList(coatAddresses, 'coatAddresses')}
-        </div>
+     
       </Container>
     );
   }

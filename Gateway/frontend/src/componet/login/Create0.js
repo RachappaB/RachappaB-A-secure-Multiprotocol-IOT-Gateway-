@@ -98,7 +98,7 @@ export default function Create0() {
                     />
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="formProjectName">
-                    <Form.Label>APIKEY</Form.Label>
+                    <Form.Label>APIKEY of thingspeak</Form.Label>
                     <Form.Control
                         type="text"
                         name="apiKey"
@@ -111,7 +111,7 @@ export default function Create0() {
                 <Form.Group className="mb-3" controlId="formMode">
                     <Form.Label>Mode</Form.Label>
                     <Form.Select name="mode" value={mode} onChange={handleModeChange}>
-                        <option value="Hard">Hard</option>
+                        <option value="Hard ">Hard --(in future )</option>
                         <option value="Easy">Easy</option>
                     </Form.Select>
                 </Form.Group>

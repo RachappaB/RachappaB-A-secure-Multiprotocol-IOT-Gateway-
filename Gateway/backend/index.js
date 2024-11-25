@@ -13,6 +13,15 @@ const fileUpload = require('express-fileupload');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 
+const { exec } = require('child_process');
+const os = require('os');
+require('dotenv').config();
+
+
+const { Parser } = require('json2csv');
+
+const { table } = require('console');
+
 // Initialize the express app
 const app = express();
 const port = process.env.PORT || 3001;
@@ -34,12 +43,26 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // MQTT setup
 const mqttClient = mqtt.connect('mqtt://localhost:1883'); // Adjust to your MQTT broker's address
 
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker');
-  mqttClient.subscribe('+/+/data', (err) => {
+  mqttClient.subscribe('project/+/+/+', (err) => {
     if (err) {
       console.error('Failed to subscribe to topic', err.message);
     } else {
@@ -51,28 +74,147 @@ mqttClient.on('connect', () => {
 // Handling incoming MQTT messages
 mqttClient.on('message', async (topic, message) => {
   const topicParts = topic.split('/');
-  if (topicParts.length === 3 && topicParts[0] === 'project' && topicParts[2] === 'data') {
-    const projectId = topicParts[1];
-    const data = JSON.parse(message.toString());
+  // Ensure the topic follows the structure 'project/{projectId}/data'
 
-    const tableName = `project_${projectId}`;
-    const columns = Object.keys(data).join(', ');
-    const placeholders = Object.keys(data).map(() => '?').join(', ');
-    const values = Object.values(data);
+  if (topicParts.length === 4 && topicParts[0] === 'project' && topicParts[2] === 'data' ) {
+    const projectId = topicParts[1];  // Extract project ID from the topic
+    const data = JSON.parse(message.toString());  // Parse the message to get the data
 
+    // Assuming the data is an object with key-value pairs, like: { "a": 1, "b": 1, "c": 1 }
+    const tableName = `project_${projectId}`; // Dynamically set the table name based on project ID
+    console.log(tableName)
+    const columns = Object.keys(data).join(', '); // Join column names (e.g., "a, b, c")
+    const placeholders = Object.keys(data).map(() => '?').join(', '); // Create placeholders for the values (e.g., "?, ?, ?")
+    console.log(placeholders)
+    const values = Object.values(data);  // Get the values from the data object (e.g., [1, 1, 1])
+    console.log(values)
+    // Construct the SQL query for inserting data into the corresponding project table
     const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
 
+    // Insert the data into the project table
     db.run(query, values, function (err) {
       if (err) {
         console.error(`Failed to insert data for project ${projectId}:`, err.message);
       } else {
-        console.log(`Data inserted successfully into project_${projectId}`);
+        console.log(`Data inserted successfully into ${tableName}`);
       }
     });
-  } else {
+  } // sending data and reciving data
+  else if(topicParts.length === 4 && topicParts[0] === 'project' && topicParts[2] === 'wait'){
+    const projectId = topicParts[1];  // Extract project ID from the topic
+    const fileId = topicParts[3]; // Get the file ID from the request URL
+    const data = JSON.parse(message.toString());  // Parse the message to get the data
+
+    // Assuming the data is an object with key-value pairs, like: { "a": 1, "b": 1, "c": 1 }
+    const tableName = `project_${projectId}`; // Dynamically set the table name based on project ID
+    console.log(tableName)
+    const columns = Object.keys(data).join(', '); // Join column names (e.g., "a, b, c")
+    const placeholders = Object.keys(data).map(() => '?').join(', '); // Create placeholders for the values (e.g., "?, ?, ?")
+    console.log(placeholders)
+    const values = Object.values(data);  // Get the values from the data object (e.g., [1, 1, 1])
+    console.log(values)
+    // Construct the SQL query for inserting data into the corresponding project table
+    const query = `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`;
+
+    // Insert the data into the project table
+    db.run(query, values, function (err) {
+      if (err) {
+        console.error(`Failed to insert data for project ${projectId}:`, err.message);
+      } else {
+        console.log(`Data inserted successfully into ${tableName}`);
+      }
+    });
+    db.get(`SELECT * FROM fileTable WHERE id = ?`, [fileId], (err, row) => {
+      if (err) {
+          console.error('Database error:', err.message);
+          return res.status(500).json({ error: 'Error retrieving file details' });
+      }
+
+      if (!row) {
+          return res.status(404).json({ error: 'File not found' });
+      }
+
+      // Extract the stored file name from the database row
+      const storedFileName = row.storedFileName;
+
+      // Define the path to the script file
+      const scriptPath = path.join(__dirname, '../uploads', storedFileName);
+
+      // Determine the script execution command based on the file extension
+      let command;
+      if (scriptPath.endsWith('.py')) {
+          command = `python3 ${row.fileAddress} '${JSON.stringify(row)}'`; // For Python scripts
+      } else if (scriptPath.endsWith('.js')) {
+          command = `node ${scriptPath} '${JSON.stringify(row)}'`; // For JavaScript scripts
+      } else {
+          return res.status(400).json({ error: 'Unsupported file type. Only .py and .js files are allowed.' });
+      }
+
+      // Execute the script
+      exec(command, (error, stdout, stderr) => {
+          if (error) {
+              console.error(`Execution error: ${error.message}`);
+          }
+
+          try {
+              // Parse the script output (expected to be JSON)
+              const output = JSON.parse(stdout);
+
+              // Construct the MQTT topic and payload
+              const mqttClient = mqtt.connect('mqtt://localhost:1883'); // Replace with your MQTT broker address
+const MQTT_BASE_TOPIC = 'project/results'; // Base topic for publishing results
+
+              const mqttTopic = `${MQTT_BASE_TOPIC}/${projectId}/${fileId}`; // Unique topic for the file
+              const mqttPayload = JSON.stringify({ fileId, output });
+
+              // Publish the result to the MQTT topic
+              mqttClient.publish(mqttTopic, mqttPayload, (err) => {
+                  if (err) {
+                      console.error('MQTT publish error:', err.message);
+                  }
+
+                  console.log(`Published result to MQTT topic: ${mqttTopic}`);
+              });
+          } catch (parseError) {
+              console.error('Error parsing script output:', parseError);
+          }
+      });
+  });
+
+
+}
+  
+  else {
     console.log("Unhandled MQTT topic:", topic);
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Database table creation functions
 function macaddtable() {
@@ -82,6 +224,7 @@ function macaddtable() {
     userid TEXT NOT NULL,
     projectid TEXT NOT NULL,
     tableName TEXT NOT NULL,
+        key TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   `;
   const createTableSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns});`;
@@ -103,6 +246,7 @@ function ipaddtable() {
     userid TEXT NOT NULL,
     projectid TEXT NOT NULL,
     tableName TEXT NOT NULL,
+    key TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   `;
   const createTableSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns});`;
@@ -137,15 +281,40 @@ function createFileTable() {
   });
 }
 
+
+
+
+function createUserTable() {
+  const tableName = `userTable`;
+  const columns = `
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  `;
+  const createTableSQL = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns});`;
+
+  db.run(createTableSQL, (err) => {
+      if (err) {
+          console.error(`Error creating table ${tableName}:`, err.message);
+      } else {
+          console.log(`Table ${tableName} created successfully.`);
+      }
+  });
+}
+
 // Call the function to create the file table
 // Call the functions to create the tables
 macaddtable();
 ipaddtable();
 createFileTable();
-
+createUserTable();
 
 // MongoDB connection setup
-const uri = 'mongodb://root:password@localhost:27017/admin';
+const uri = 'mongodb+srv://rachappabiradar6:wrzlppnTE0h2RSXG@cluster0.mhswe.mongodb.net/';
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -196,6 +365,8 @@ const createAccessToken = (user) => {
 app.use('/user', require('./router/userRouter'));
 app.use('/project', require('./router/ProjectRouter'));
 app.use('/customer',require('./router/cutomer'))
+app.use('/wifisendcrptic',require('./router/Wifisendcrptic'))
+
 // Home route
 app.get('/', (req, res) => {
   res.json({ msg: "Welcome to the server" });

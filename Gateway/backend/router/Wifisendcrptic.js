@@ -2,6 +2,21 @@ const express = require('express');
 const router = express.Router();
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./database.db'); // Adjust the path to your database file
+const Users = require('../modules/customerModel');
+const Project = require('../modules/projectModel');
+const auth = require('../middleware/auth');
+const { Query } = require('mongoose');
+const axios = require('axios'); // Make sure to require axios at the top of your file
+const { exec } = require('child_process');
+const os = require('os');
+require('dotenv').config();
+
+const path = require('path');
+const fs = require('fs');
+
+const { Parser } = require('json2csv');
+
+const multer = require('multer');
 
 // XOR encryption function
 function xorEncrypt(data, key) {
@@ -28,7 +43,22 @@ function xorDecrypt(data, key) {
     return decryptedData;
 }
 
-
+// Fetch decryption/encryption key from ipaddtable
+function getKeyFromDatabase(projectId, ip) {
+    return new Promise((resolve, reject) => {
+        const query = `SELECT key FROM ipaddtable WHERE projectid = ? AND ip = ?`;
+        db.get(query, [projectId, ip], (err, row) => {
+            if (err) {
+                console.error('Error fetching key from database:', err.message);
+                return reject('Error fetching key from database.');
+            }
+            if (!row) {
+                return reject('No key found for the provided project and IP.');
+            }
+            resolve(row.key);
+        });
+    });
+}
 
 // Secure data insertion route
 router.post('/secure-insert/:projectId', async (req, res) => {
@@ -36,10 +66,8 @@ router.post('/secure-insert/:projectId', async (req, res) => {
         const projectId = req.params.projectId;
         const tableName = `project_${projectId}`;
         const requestIp = req.ip; // Get the IP address of the request
-
         const encryptedData = req.body.encryptedData; // Encrypted data from the request
-        const decryptionKey = 'GGWItCuXSPiOjmqVM3Px'; // Decryption key
-
+        console.log("DDDDDDDD")
         if (!encryptedData) {
             return res.status(400).json({ message: 'No encrypted data provided.' });
         }
@@ -47,11 +75,14 @@ router.post('/secure-insert/:projectId', async (req, res) => {
         console.log(`Incoming request from IP: ${requestIp} for project table: ${tableName}`);
         console.log(`Received encrypted data: ${encryptedData}`);
 
-        // Step 1: Decrypt the incoming data
+        // Step 1: Fetch decryption key
+        const decryptionKey = await getKeyFromDatabase(projectId, requestIp);
+
+        // Step 2: Decrypt the incoming data
         const decryptedData = xorDecrypt(encryptedData, decryptionKey);
         console.log(`Decrypted data: ${decryptedData}`);
 
-        // Step 2: Fetch the column names dynamically from the table
+        // Step 3: Fetch the column names dynamically from the table
         const getColumnsQuery = `PRAGMA table_info(${tableName})`;
         db.all(getColumnsQuery, (err, columns) => {
             if (err) {
@@ -65,19 +96,19 @@ router.post('/secure-insert/:projectId', async (req, res) => {
             // Split the decrypted values
             const values = decryptedData.split(',');
 
-            // Step 3: Validate the number of values matches the number of columns
+            // Validate the number of values matches the number of columns
             if (values.length !== columnKeys.length) {
                 return res.status(400).json({
                     message: 'Mismatch between number of values and table columns.',
                 });
             }
 
-            // Step 4: Build the SQL query dynamically
+            // Build the SQL query dynamically
             const columnsList = columnKeys.join(', ');
             const placeholders = columnKeys.map(() => '?').join(', ');
             const insertQuery = `INSERT INTO ${tableName} (${columnsList}) VALUES (${placeholders})`;
 
-            // Step 5: Insert data into the table
+            // Insert data into the table
             db.run(insertQuery, values, function (insertErr) {
                 if (insertErr) {
                     console.error(`Error inserting data into ${tableName}:`, insertErr.message);
@@ -90,63 +121,35 @@ router.post('/secure-insert/:projectId', async (req, res) => {
         });
     } catch (error) {
         console.error('Server error:', error.message);
-        return res.status(500).json({ message: 'Server error.' });
+        return res.status(500).json({ message: error });
     }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Route to accept basic data and return encrypted JSON
-router.post('/encrypt-data', (req, res) => {
-  try {
-      const { values } = req.body; // Expecting an array of values
-      const encryptionKey = 'GGWItCuXSPiOjmqVM3Px'; // Encryption key
+router.post('/encrypt-data', async (req, res) => {
+    try {
+        const { projectId, values } = req.body; // Expecting projectId and array of values
+        const requestIp = req.ip; // Get IP address of the request
 
-      if (!Array.isArray(values)) {
-          return res.status(400).json({ message: 'Invalid input. Expected an array of values.' });
-      }
+        if (!Array.isArray(values)) {
+            return res.status(400).json({ message: 'Invalid input. Expected an array of values.' });
+        }
 
-      // Join values into a comma-separated string for encryption
-      const dataToEncrypt = values.join(',');
+        // Fetch encryption key
+        const encryptionKey = await getKeyFromDatabase(projectId, requestIp);
 
-      // Encrypt the data
-      const encryptedData = xorEncrypt(dataToEncrypt, encryptionKey);
+        // Join values into a comma-separated string for encryption
+        const dataToEncrypt = values.join(',');
 
-      // Return the encrypted JSON
-      res.status(200).json({ encryptedData });
-  } catch (error) {
-      console.error('Error encrypting data:', error.message);
-      res.status(500).json({ message: 'Server error while encrypting data.' });
-  }
+        // Encrypt the data
+        const encryptedData = xorEncrypt(dataToEncrypt, encryptionKey);
+
+        // Return the encrypted JSON
+        res.status(200).json({ encryptedData });
+    } catch (error) {
+        console.error('Error encrypting data:', error.message);
+        res.status(500).json({ message: error });
+    }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = router;

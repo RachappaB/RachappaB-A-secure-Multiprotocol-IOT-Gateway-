@@ -24,7 +24,7 @@ export default function Chart1() {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const response = await axios.get(`/project/table/${id}`);
+        const response = await axios.get(`/project/chart/${id}`);
         const rows = response.data.rows;
 
         if (rows.length === 0) {
@@ -41,6 +41,7 @@ export default function Chart1() {
           data: rows.map(row => ({ x: row.timestamp, y: row[column] })),
           borderColor: `hsl(${index * 360 / columnNames.length}, 70%, 50%)`,
           backgroundColor: `hsl(${index * 360 / columnNames.length}, 70%, 90%)`,
+          tension: 0.4, // Smooth curves
           fill: true,
         }));
 
@@ -58,6 +59,7 @@ export default function Chart1() {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false, // Allows the chart to expand
     plugins: {
       legend: {
         position: 'top',
@@ -75,11 +77,16 @@ export default function Chart1() {
         type: 'time',
         time: {
           unit: 'day',
-          tooltipFormat: 'MMM d, yyyy', // Use valid date-fns format
+          tooltipFormat: 'MMM d, yyyy', // Format for tooltips
         },
         title: {
           display: true,
           text: 'Timestamp',
+        },
+        ticks: {
+          autoSkip: true, // Skip ticks for better spacing
+          maxRotation: 45,
+          minRotation: 0,
         },
       },
       y: {
@@ -87,12 +94,21 @@ export default function Chart1() {
           display: true,
           text: 'Value',
         },
+        ticks: {
+          beginAtZero: true,
+          autoSkip: true, // Ensure labels are not overcrowded
+        },
+        suggestedMin: 0, // Ensure Y-axis starts near zero
+        suggestedMax: 100, // Adjust based on your data range if known
       },
+    },
+    layout: {
+      padding: 20, // Adds space around the chart for responsiveness
     },
   };
 
   return (
-    <div className="mt-5">
+    <div className="mt-5" style={{ height: '80vh', width: '100%' }}>
       <h2>Data Line Chart</h2>
       <Line data={chartData} options={options} />
     </div>
